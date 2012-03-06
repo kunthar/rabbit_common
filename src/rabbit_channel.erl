@@ -18,7 +18,7 @@
 -include("rabbit_framing.hrl").
 -include("rabbit.hrl").
 
--behaviour(gen_server2).
+-behaviour(gen_server_new).
 
 -export([start_link/10, do/2, do/3, flush/1, shutdown/1]).
 -export([send_command/2, deliver/4, flushed/2, confirm/2]).
@@ -103,7 +103,7 @@
 
 start_link(Channel, ReaderPid, WriterPid, ConnPid, Protocol, User, VHost,
            Capabilities, CollectorPid, Limiter) ->
-    gen_server2:start_link(
+    gen_server_new:start_link(
       ?MODULE, [Channel, ReaderPid, WriterPid, ConnPid, Protocol, User,
                 VHost, Capabilities, CollectorPid, Limiter], []).
 
@@ -111,25 +111,25 @@ do(Pid, Method) ->
     do(Pid, Method, none).
 
 do(Pid, Method, Content) ->
-    gen_server2:cast(Pid, {method, Method, Content}).
+    gen_server_new:cast(Pid, {method, Method, Content}).
 
 flush(Pid) ->
-    gen_server2:call(Pid, flush, infinity).
+    gen_server_new:call(Pid, flush, infinity).
 
 shutdown(Pid) ->
-    gen_server2:cast(Pid, terminate).
+    gen_server_new:cast(Pid, terminate).
 
 send_command(Pid, Msg) ->
-    gen_server2:cast(Pid,  {command, Msg}).
+    gen_server_new:cast(Pid,  {command, Msg}).
 
 deliver(Pid, ConsumerTag, AckRequired, Msg) ->
-    gen_server2:cast(Pid, {deliver, ConsumerTag, AckRequired, Msg}).
+    gen_server_new:cast(Pid, {deliver, ConsumerTag, AckRequired, Msg}).
 
 flushed(Pid, QPid) ->
-    gen_server2:cast(Pid, {flushed, QPid}).
+    gen_server_new:cast(Pid, {flushed, QPid}).
 
 confirm(Pid, MsgSeqNos) ->
-    gen_server2:cast(Pid, {confirm, MsgSeqNos, self()}).
+    gen_server_new:cast(Pid, {confirm, MsgSeqNos, self()}).
 
 list() ->
     rabbit_misc:append_rpc_all_nodes(rabbit_mnesia:running_clustered_nodes(),
@@ -141,10 +141,10 @@ list_local() ->
 info_keys() -> ?INFO_KEYS.
 
 info(Pid) ->
-    gen_server2:call(Pid, info, infinity).
+    gen_server_new:call(Pid, info, infinity).
 
 info(Pid, Items) ->
-    case gen_server2:call(Pid, {info, Items}, infinity) of
+    case gen_server_new:call(Pid, {info, Items}, infinity) of
         {ok, Res}      -> Res;
         {error, Error} -> throw(Error)
     end.
@@ -157,14 +157,14 @@ info_all(Items) ->
 
 refresh_config_local() ->
     rabbit_misc:upmap(
-      fun (C) -> gen_server2:call(C, refresh_config) end, list_local()),
+      fun (C) -> gen_server_new:call(C, refresh_config) end, list_local()),
     ok.
 
 ready_for_close(Pid) ->
-    gen_server2:cast(Pid, ready_for_close).
+    gen_server_new:cast(Pid, ready_for_close).
 
 force_event_refresh() ->
-    [gen_server2:cast(C, force_event_refresh) || C <- list()],
+    [gen_server_new:cast(C, force_event_refresh) || C <- list()],
     ok.
 
 %%---------------------------------------------------------------------------

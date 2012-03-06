@@ -186,7 +186,7 @@ find_durable_queues() ->
 recover_durable_queues(DurableQueues) ->
     Qs = [start_queue_process(node(), Q) || Q <- DurableQueues],
     [QName || Q = #amqqueue{name = QName, pid = Pid} <- Qs,
-              gen_server2:call(Pid, {init, true}, infinity) == {new, Q}].
+              gen_server_new:call(Pid, {init, true}, infinity) == {new, Q}].
 
 declare(QueueName, Durable, AutoDelete, Args, Owner) ->
     ok = check_declare_arguments(QueueName, Args),
@@ -199,7 +199,7 @@ declare(QueueName, Durable, AutoDelete, Args, Owner) ->
                                             pid             = none,
                                             slave_pids      = [],
                                             mirror_nodes    = MNodes}),
-    case gen_server2:call(Q#amqqueue.pid, {init, false}, infinity) of
+    case gen_server_new:call(Q#amqqueue.pid, {init, false}, infinity) of
         not_found -> rabbit_misc:not_found(QueueName);
         Q1        -> Q1
     end.
@@ -390,7 +390,7 @@ info_all(VHostPath) -> map(VHostPath, fun (Q) -> info(Q) end).
 info_all(VHostPath, Items) -> map(VHostPath, fun (Q) -> info(Q, Items) end).
 
 force_event_refresh() ->
-    [gen_server2:cast(Q#amqqueue.pid, force_event_refresh) || Q <- list()],
+    [gen_server_new:cast(Q#amqqueue.pid, force_event_refresh) || Q <- list()],
     ok.
 
 consumers(#amqqueue{ pid = QPid }) ->
@@ -412,7 +412,7 @@ stat(#amqqueue{pid = QPid}) ->
     delegate_call(QPid, stat).
 
 delete_immediately(#amqqueue{ pid = QPid }) ->
-    gen_server2:cast(QPid, delete_immediately).
+    gen_server_new:cast(QPid, delete_immediately).
 
 delete(#amqqueue{ pid = QPid }, IfUnused, IfEmpty) ->
     delegate_call(QPid, {delete, IfUnused, IfEmpty}).
@@ -420,12 +420,12 @@ delete(#amqqueue{ pid = QPid }, IfUnused, IfEmpty) ->
 purge(#amqqueue{ pid = QPid }) -> delegate_call(QPid, purge).
 
 deliver(QPid, Delivery = #delivery{immediate = true}) ->
-    gen_server2:call(QPid, {deliver_immediately, Delivery}, infinity);
+    gen_server_new:call(QPid, {deliver_immediately, Delivery}, infinity);
 deliver(QPid, Delivery = #delivery{mandatory = true}) ->
-    gen_server2:call(QPid, {deliver, Delivery}, infinity),
+    gen_server_new:call(QPid, {deliver, Delivery}, infinity),
     true;
 deliver(QPid, Delivery) ->
-    gen_server2:cast(QPid, {deliver, Delivery}),
+    gen_server_new:cast(QPid, {deliver, Delivery}),
     true.
 
 requeue(QPid, MsgIds, ChPid) ->
@@ -439,12 +439,12 @@ reject(QPid, MsgIds, Requeue, ChPid) ->
 
 notify_down_all(QPids, ChPid) ->
     safe_delegate_call_ok(
-      fun (QPid) -> gen_server2:call(QPid, {notify_down, ChPid}, infinity) end,
+      fun (QPid) -> gen_server_new:call(QPid, {notify_down, ChPid}, infinity) end,
       QPids).
 
 limit_all(QPids, ChPid, Limiter) ->
     delegate:invoke_no_result(
-      QPids, fun (QPid) -> gen_server2:cast(QPid, {limit, ChPid, Limiter}) end).
+      QPids, fun (QPid) -> gen_server_new:cast(QPid, {limit, ChPid, Limiter}) end).
 
 basic_get(#amqqueue{pid = QPid}, ChPid, NoAck) ->
     delegate_call(QPid, {basic_get, ChPid, NoAck}).
@@ -458,14 +458,14 @@ basic_cancel(#amqqueue{pid = QPid}, ChPid, ConsumerTag, OkMsg) ->
     ok = delegate_call(QPid, {basic_cancel, ChPid, ConsumerTag, OkMsg}).
 
 notify_sent(QPid, ChPid) ->
-    gen_server2:cast(QPid, {notify_sent, ChPid}).
+    gen_server_new:cast(QPid, {notify_sent, ChPid}).
 
 unblock(QPid, ChPid) ->
     delegate_cast(QPid, {unblock, ChPid}).
 
 flush_all(QPids, ChPid) ->
     delegate:invoke_no_result(
-      QPids, fun (QPid) -> gen_server2:cast(QPid, {flush, ChPid}) end).
+      QPids, fun (QPid) -> gen_server_new:cast(QPid, {flush, ChPid}) end).
 
 internal_delete1(QueueName) ->
     ok = mnesia:delete({rabbit_queue, QueueName}),
@@ -485,13 +485,13 @@ internal_delete(QueueName) ->
       end).
 
 run_backing_queue(QPid, Mod, Fun) ->
-    gen_server2:cast(QPid, {run_backing_queue, Mod, Fun}).
+    gen_server_new:cast(QPid, {run_backing_queue, Mod, Fun}).
 
 set_ram_duration_target(QPid, Duration) ->
-    gen_server2:cast(QPid, {set_ram_duration_target, Duration}).
+    gen_server_new:cast(QPid, {set_ram_duration_target, Duration}).
 
 set_maximum_since_use(QPid, Age) ->
-    gen_server2:cast(QPid, {set_maximum_since_use, Age}).
+    gen_server_new:cast(QPid, {set_maximum_since_use, Age}).
 
 on_node_down(Node) ->
     rabbit_misc:execute_mnesia_tx_with_tail(
@@ -529,7 +529,7 @@ safe_delegate_call_ok(F, Pids) ->
     end.
 
 delegate_call(Pid, Msg) ->
-    delegate:invoke(Pid, fun (P) -> gen_server2:call(P, Msg, infinity) end).
+    delegate:invoke(Pid, fun (P) -> gen_server_new:call(P, Msg, infinity) end).
 
 delegate_cast(Pid, Msg) ->
-    delegate:invoke_no_result(Pid, fun (P) -> gen_server2:cast(P, Msg) end).
+    delegate:invoke_no_result(Pid, fun (P) -> gen_server_new:cast(P, Msg) end).

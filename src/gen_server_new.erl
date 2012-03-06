@@ -1,18 +1,18 @@
 %% This file is a copy of gen_server.erl from the R13B-1 Erlang/OTP
 %% distribution, with the following modifications:
 %%
-%% 1) the module name is gen_server2
+%% 1) the module name is gen_server_new
 %%
 %% 2) more efficient handling of selective receives in callbacks
-%% gen_server2 processes drain their message queue into an internal
+%% gen_server_new processes drain their message queue into an internal
 %% buffer before invoking any callback module functions. Messages are
 %% dequeued from the buffer for processing. Thus the effective message
-%% queue of a gen_server2 process is the concatenation of the internal
+%% queue of a gen_server_new process is the concatenation of the internal
 %% buffer and the real message queue.
 %% As a result of the draining, any selective receive invoked inside a
 %% callback is less likely to have to scan a large message queue.
 %%
-%% 3) gen_server2:cast is guaranteed to be order-preserving
+%% 3) gen_server_new:cast is guaranteed to be order-preserving
 %% The original code could reorder messages when communicating with a
 %% process on a remote node that was not currently connected.
 %%
@@ -39,7 +39,7 @@
 %% occurred, hibernation will occur as normal. Upon awaking, a new
 %% current timeout value will be calculated.
 %%
-%% The purpose is that the gen_server2 takes care of adjusting the
+%% The purpose is that the gen_server_new takes care of adjusting the
 %% current timeout value such that the process will increase the
 %% timeout value repeatedly if it is unable to sleep for the
 %% DesiredHibernatePeriod. If it is able to sleep for the
@@ -66,7 +66,7 @@
 %% which will be passed into any of the callback functions in the new
 %% module. Note there is no form also encompassing a reply, thus if
 %% you wish to reply in handle_call/3 and change the callback module,
-%% you need to use gen_server2:reply/2 to issue the reply manually.
+%% you need to use gen_server_new:reply/2 to issue the reply manually.
 %%
 %% 8) The callback module can optionally implement
 %% format_message_queue/2 which is the equivalent of format_status/2
@@ -92,7 +92,7 @@
 %%
 %%     $Id$
 %%
--module(gen_server2).
+-module(gen_server_new).
 
 %%% ---------------------------------------------------
 %%%
